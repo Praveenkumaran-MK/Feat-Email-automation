@@ -1,0 +1,30 @@
+{
+  "name": "email-automation",
+  "version": "1.0.0",
+  "description": "Send emails using brevo at any time in automated manner",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "send": "node src/sendEmails.js",
+    "test": "node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "email-automation"
+  },
+  "keywords": [
+    "emailing|automated|300",
+    "emails/day|connected",
+    "with",
+    "DB"
+  ],
+  "author": "Praveenkumaran-MK",
+  "license": "ISC",
+  "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "node-cron": "^4.2.1"
+  }
+}
