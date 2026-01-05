@@ -1,0 +1,177 @@
+name,email,subscribed_date,department,preferences
+Alice Johnson,mkpk3426@gmail.com,2025-01-01,Engineering,tech
+Bob Smith,praveenkumaranmk.cse2024@citchennai.net,2025-01-01,Marketing,marketing
+Carol White,carol.white@example.com,2025-01-02,Sales,business
+David Brown,david.brown@example.com,2025-01-02,Engineering,tech
+Emma Davis,mkpk3426@gmail.com,2025-01-03,Human Resources,general
+Frank Miller,frank.miller@example.com,2025-01-03,Finance,business
+Grace Wilson,grace.wilson@example.com,2025-01-04,Marketing,marketing
+Henry Moore,henry.moore@example.com,2025-01-04,Engineering,tech
+Ivy Taylor,ivy.taylor@example.com,2025-01-05,Sales,business
+Jack Anderson,jack.anderson@example.com,2025-01-05,Engineering,tech
+Karen Thomas,karen.thomas@example.com,2025-01-06,Marketing,marketing
+Leo Jackson,leo.jackson@example.com,2025-01-06,Finance,business
+Maria Garcia,maria.garcia@example.com,2025-01-07,Human Resources,general
+Nathan Martinez,nathan.martinez@example.com,2025-01-07,Engineering,tech
+Olivia Rodriguez,olivia.rodriguez@example.com,2025-01-08,Sales,business
+Paul Hernandez,paul.hernandez@example.com,2025-01-08,Marketing,marketing
+Quinn Lopez,quinn.lopez@example.com,2025-01-09,Engineering,tech
+Rachel Gonzalez,rachel.gonzalez@example.com,2025-01-09,Finance,business
+Samuel Wilson,samuel.wilson@example.com,2025-01-10,Human Resources,general
+Tina Anderson,tina.anderson@example.com,2025-01-10,Engineering,tech
+Uma Thomas,uma.thomas@example.com,2025-01-11,Marketing,marketing
+Victor Taylor,victor.taylor@example.com,2025-01-11,Sales,business
+Wendy Moore,wendy.moore@example.com,2025-01-12,Engineering,tech
+Xavier Jackson,xavier.jackson@example.com,2025-01-12,Finance,business
+Yara White,yara.white@example.com,2025-01-13,Human Resources,general
+Zack Martin,zack.martin@example.com,2025-01-13,Engineering,tech
+Amy Lee,amy.lee@example.com,2025-01-14,Marketing,marketing
+Brian Walker,brian.walker@example.com,2025-01-14,Sales,business
+Chloe Hall,chloe.hall@example.com,2025-01-15,Engineering,tech
+Daniel Allen,daniel.allen@example.com,2025-01-15,Finance,business
+Emily Young,emily.young@example.com,2025-01-16,Human Resources,general
+Felix King,felix.king@example.com,2025-01-16,Engineering,tech
+Gina Wright,gina.wright@example.com,2025-01-17,Marketing,marketing
+Harry Scott,harry.scott@example.com,2025-01-17,Sales,business
+Iris Green,iris.green@example.com,2025-01-18,Engineering,tech
+James Adams,james.adams@example.com,2025-01-18,Finance,business
+Kelly Baker,kelly.baker@example.com,2025-01-19,Human Resources,general
+Liam Nelson,liam.nelson@example.com,2025-01-19,Engineering,tech
+Mia Carter,mia.carter@example.com,2025-01-20,Marketing,marketing
+Noah Mitchell,noah.mitchell@example.com,2025-01-20,Sales,business
+Oscar Perez,oscar.perez@example.com,2025-01-21,Engineering,tech
+Penny Roberts,penny.roberts@example.com,2025-01-21,Finance,business
+Quincy Turner,quincy.turner@example.com,2025-01-22,Human Resources,general
+Ruby Phillips,ruby.phillips@example.com,2025-01-22,Engineering,tech
+Steve Campbell,steve.campbell@example.com,2025-01-23,Marketing,marketing
+Tracy Parker,tracy.parker@example.com,2025-01-23,Sales,business
+Ursula Evans,ursula.evans@example.com,2025-01-24,Engineering,tech
+Vincent Edwards,vincent.edwards@example.com,2025-01-24,Finance,business
+Willow Collins,willow.collins@example.com,2025-01-25,Human Resources,general
+Xander Stewart,xander.stewart@example.com,2025-01-25,Engineering,tech
+Yasmin Sanchez,yasmin.sanchez@example.com,2025-01-26,Marketing,marketing
+Zachary Morris,zachary.morris@example.com,2025-01-26,Sales,business
+Abigail Rogers,abigail.rogers@example.com,2025-01-27,Engineering,tech
+Benjamin Reed,benjamin.reed@example.com,2025-01-27,Finance,business
+Charlotte Cook,charlotte.cook@example.com,2025-01-28,Human Resources,general
+Dylan Morgan,dylan.morgan@example.com,2025-01-28,Engineering,tech
+Ella Bell,ella.bell@example.com,2025-01-29,Marketing,marketing
+Finn Murphy,finn.murphy@example.com,2025-01-29,Sales,business
+Georgia Bailey,georgia.bailey@example.com,2025-01-30,Engineering,tech
+Hudson Rivera,hudson.rivera@example.com,2025-01-30,Finance,business
+Isabella Cooper,isabella.cooper@example.com,2025-01-31,Human Resources,general
+Jacob Richardson,jacob.richardson@example.com,2025-01-31,Engineering,tech
+Katherine Cox,katherine.cox@example.com,2025-02-01,Marketing,marketing
+Lucas Howard,lucas.howard@example.com,2025-02-01,Sales,business
+Madison Ward,madison.ward@example.com,2025-02-02,Engineering,tech
+Nicholas Torres,nicholas.torres@example.com,2025-02-02,Finance,business
+Olivia Peterson,olivia.peterson@example.com,2025-02-03,Human Resources,general
+Parker Gray,parker.gray@example.com,2025-02-03,Engineering,tech
+Quinn Ramirez,quinn.ramirez@example.com,2025-02-04,Marketing,marketing
+Ryan James,ryan.james@example.com,2025-02-04,Sales,business
+Sophia Watson,sophia.watson@example.com,2025-02-05,Engineering,tech
+Thomas Brooks,thomas.brooks@example.com,2025-02-05,Finance,business
+Unity Kelly,unity.kelly@example.com,2025-02-06,Human Resources,general
+Violet Sanders,violet.sanders@example.com,2025-02-06,Engineering,tech
+William Price,william.price@example.com,2025-02-07,Marketing,marketing
+Xena Bennett,xena.bennett@example.com,2025-02-07,Sales,business
+Yosef Wood,yosef.wood@example.com,2025-02-08,Engineering,tech
+Zara Barnes,zara.barnes@example.com,2025-02-08,Finance,business
+Adrian Ross,adrian.ross@example.com,2025-02-09,Human Resources,general
+Bella Henderson,bella.henderson@example.com,2025-02-09,Engineering,tech
+Cameron Coleman,cameron.coleman@example.com,2025-02-10,Marketing,marketing
+Diana Jenkins,diana.jenkins@example.com,2025-02-10,Sales,business
+Ethan Perry,ethan.perry@example.com,2025-02-11,Engineering,tech
+Fiona Powell,fiona.powell@example.com,2025-02-11,Finance,business
+Gabriel Long,gabriel.long@example.com,2025-02-12,Human Resources,general
+Hannah Patterson,hannah.patterson@example.com,2025-02-12,Engineering,tech
+Isaac Hughes,isaac.hughes@example.com,2025-02-13,Marketing,marketing
+Julia Flores,julia.flores@example.com,2025-02-13,Sales,business
+Kevin Washington,kevin.washington@example.com,2025-02-14,Engineering,tech
+Luna Butler,luna.butler@example.com,2025-02-14,Finance,business
+Mason Simmons,mason.simmons@example.com,2025-02-15,Human Resources,general
+Nora Foster,nora.foster@example.com,2025-02-15,Engineering,tech
+Owen Gonzales,owen.gonzales@example.com,2025-02-16,Marketing,marketing
+Piper Bryant,piper.bryant@example.com,2025-02-16,Sales,business
+Quentin Alexander,quentin.alexander@example.com,2025-02-17,Engineering,tech
+Rose Russell,rose.russell@example.com,2025-02-17,Finance,business
+Sebastian Griffin,sebastian.griffin@example.com,2025-02-18,Human Resources,general
+Taylor Diaz,taylor.diaz@example.com,2025-02-18,Engineering,tech
+Uma Hayes,uma.hayes@example.com,2025-02-19,Marketing,marketing
+Vaughn Myers,vaughn.myers@example.com,2025-02-19,Sales,business
+Willa Ford,willa.ford@example.com,2025-02-20,Engineering,tech
+Xander Hamilton,xander.hamilton@example.com,2025-02-20,Finance,business
+Yvonne Graham,yvonne.graham@example.com,2025-02-21,Human Resources,general
+Zane Sullivan,zane.sullivan@example.com,2025-02-21,Engineering,tech
+Aria Wallace,aria.wallace@example.com,2025-02-22,Marketing,marketing
+Blake Woods,blake.woods@example.com,2025-02-22,Sales,business
+Cora Cole,cora.cole@example.com,2025-02-23,Engineering,tech
+Dominic West,dominic.west@example.com,2025-02-23,Finance,business
+Elena Jordan,elena.jordan@example.com,2025-02-24,Human Resources,general
+Flynn Owens,flynn.owens@example.com,2025-02-24,Engineering,tech
+Gemma Reynolds,gemma.reynolds@example.com,2025-02-25,Marketing,marketing
+Heath Fisher,heath.fisher@example.com,2025-02-25,Sales,business
+Ivy Ellis,ivy.ellis@example.com,2025-02-26,Engineering,tech
+Jasper Harper,jasper.harper@example.com,2025-02-26,Finance,business
+Kira Monroe,kira.monroe@example.com,2025-02-27,Human Resources,general
+Logan Gibson,logan.gibson@example.com,2025-02-27,Engineering,tech
+Maya McDonald,maya.mcdonald@example.com,2025-02-28,Marketing,marketing
+Nash Cruz,nash.cruz@example.com,2025-02-28,Sales,business
+Olive Marshall,olive.marshall@example.com,2025-03-01,Engineering,tech
+Phoenix Ortiz,phoenix.ortiz@example.com,2025-03-01,Finance,business
+Quinn Gomez,quinn.gomez@example.com,2025-03-02,Human Resources,general
+Ryder Murray,ryder.murray@example.com,2025-03-02,Engineering,tech
+Sage Freeman,sage.freeman@example.com,2025-03-03,Marketing,marketing
+Tate Wells,tate.wells@example.com,2025-03-03,Sales,business
+Unity Webb,unity.webb@example.com,2025-03-04,Engineering,tech
+Vera Simpson,vera.simpson@example.com,2025-03-04,Finance,business
+Wade Stevens,wade.stevens@example.com,2025-03-05,Human Resources,general
+Xyla Tucker,xyla.tucker@example.com,2025-03-05,Engineering,tech
+Yale Porter,yale.porter@example.com,2025-03-06,Marketing,marketing
+Zion Hunter,zion.hunter@example.com,2025-03-06,Sales,business
+Aiden Hicks,aiden.hicks@example.com,2025-03-07,Engineering,tech
+Blair Crawford,blair.crawford@example.com,2025-03-07,Finance,business
+Cade Henry,cade.henry@example.com,2025-03-08,Human Resources,general
+Daphne Boyd,daphne.boyd@example.com,2025-03-08,Engineering,tech
+Eli Mason,eli.mason@example.com,2025-03-09,Marketing,marketing
+Faith Morales,faith.morales@example.com,2025-03-09,Sales,business
+Gage Kennedy,gage.kennedy@example.com,2025-03-10,Engineering,tech
+Hope Warren,hope.warren@example.com,2025-03-10,Finance,business
+Ivan Dixon,ivan.dixon@example.com,2025-03-11,Human Resources,general
+Jade Ramos,jade.ramos@example.com,2025-03-11,Engineering,tech
+Knox Reeves,knox.reeves@example.com,2025-03-12,Marketing,marketing
+Lila Burns,lila.burns@example.com,2025-03-12,Sales,business
+Miles Gordon,miles.gordon@example.com,2025-03-13,Engineering,tech
+Nina Shaw,nina.shaw@example.com,2025-03-13,Finance,business
+Otto Holmes,otto.holmes@example.com,2025-03-14,Human Resources,general
+Pearl Rice,pearl.rice@example.com,2025-03-14,Engineering,tech
+Quest Robertson,quest.robertson@example.com,2025-03-15,Marketing,marketing
+Reid Hunt,reid.hunt@example.com,2025-03-15,Sales,business
+Skye Black,skye.black@example.com,2025-03-16,Engineering,tech
+Troy Daniels,troy.daniels@example.com,2025-03-16,Finance,business
+Uriel Palmer,uriel.palmer@example.com,2025-03-17,Human Resources,general
+Vera Mills,vera.mills@example.com,2025-03-17,Engineering,tech
+Wade Nichols,wade.nichols@example.com,2025-03-18,Marketing,marketing
+Xena Grant,xena.grant@example.com,2025-03-18,Sales,business
+York Knight,york.knight@example.com,2025-03-19,Engineering,tech
+Zara Lawson,zara.lawson@example.com,2025-03-19,Finance,business
+Axel Ferguson,axel.ferguson@example.com,2025-03-20,Human Resources,general
+Brynn Stone,brynn.stone@example.com,2025-03-20,Engineering,tech
+Cole Hawkins,cole.hawkins@example.com,2025-03-21,Marketing,marketing
+Drew Dunn,drew.dunn@example.com,2025-03-21,Sales,business
+Eden Perkins,eden.perkins@example.com,2025-03-22,Engineering,tech
+Ford Hudson,ford.hudson@example.com,2025-03-22,Finance,business
+Grey Spencer,grey.spencer@example.com,2025-03-23,Human Resources,general
+Halo Gardner,halo.gardner@example.com,2025-03-23,Engineering,tech
+Iris Stephens,iris.stephens@example.com,2025-03-24,Marketing,marketing
+Jett Payne,jett.payne@example.com,2025-03-24,Sales,business
+Kade Berry,kade.berry@example.com,2025-03-25,Engineering,tech
+Lyra Matthews,lyra.matthews@example.com,2025-03-25,Finance,business
+Milo Joseph,milo.joseph@example.com,2025-03-26,Human Resources,general
+Nova Mendoza,nova.mendoza@example.com,2025-03-26,Engineering,tech
+Odin Ruiz,odin.ruiz@example.com,2025-03-27,Marketing,marketing
+Penn Castillo,penn.castillo@example.com,2025-03-27,Sales,business
+Quill Jimenez,quill.jimenez@example.com,2025-03-28,Engineering,tech
+Remi Pierce,remi.pierce@example.com,2025-03-28,Finance,business
+Sage Fox,sage.fox@example.com,2025-03-29,Human Resources,general
+Tatum Boyd,tatum.boyd@example.com,2025-03-29,Engineering,tech

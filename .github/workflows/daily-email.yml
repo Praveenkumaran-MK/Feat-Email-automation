@@ -1,9 +1,9 @@
-name: Daily Email Automation
+name: Daily Email Automation - Production
 
 on:
-  # Run daily at 7:00 AM IST (1:30 AM UTC)
+  # Run daily at 7:30 AM IST (2:00 AM UTC)
   schedule:
-    - cron: '30 1 * * *'
+    - cron: '0 2 * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
@@ -11,6 +11,7 @@ on:
 jobs:
   send-emails:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # Prevent hanging workflows
     
     steps:
       - name: Checkout code
@@ -27,14 +28,28 @@ jobs:
       
       - name: Send daily emails
         env:
+          # Required: Brevo API configuration
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          
+          # Optional: Gmail notifications for errors and summaries
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          
+          # Optional: Rate limiting (defaults to 2000ms if not set)
+          RATE_LIMIT_DELAY_MS: 2000
+          MAX_EMAILS_PER_DAY: 200
         run: npm run send
       
-      - name: Upload logs (on failure)
-        if: failure()
+      - name: Upload execution logs
+        if: always()  # Upload logs on both success and failure
         uses: actions/upload-artifact@v4
         with:
-          name: email-logs
-          path: logs/
-          retention-days: 7
+          name: email-logs-${{ github.run_number }}
+          path: |
+            *.log
+            logs/
+          retention-days: 30
+          if-no-files-found: ignore
+
