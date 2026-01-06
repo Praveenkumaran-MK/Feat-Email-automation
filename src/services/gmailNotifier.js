@@ -1,13 +1,7 @@
 import nodemailer from 'nodemailer';
 
-/**
- * Gmail SMTP transporter for error notifications
- */
 let transporter = null;
 
-/**
- * Initialize Gmail transporter
- */
 function initializeTransporter() {
   if (transporter) return transporter;
 
@@ -31,7 +25,6 @@ function initializeTransporter() {
 }
 
 /**
- * Send error notification to admin
  * @param {Error} error - Error object
  * @param {Object} context - Additional context
  */
@@ -132,8 +125,7 @@ export async function sendErrorNotification(error, context = {}) {
 }
 
 /**
- * Send daily summary to admin
- * @param {Object} stats - Execution statistics
+ * @param {Object} stats 
  */
 export async function sendDailySummary(stats) {
   try {

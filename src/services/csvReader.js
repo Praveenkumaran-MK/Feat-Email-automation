@@ -3,23 +3,22 @@ import { readFileSync } from 'fs';
 import validator from 'validator';
 
 /**
- * Read and parse subscriber data from CSV file
- * @param {string} filePath - Path to CSV file
- * @returns {Array} Array of validated subscriber objects
+ * @param {string} filePath 
+ * @returns {Array}
  */
 export function readSubscribers(filePath) {
   try {
-    // Read CSV file
+    
     const fileContent = readFileSync(filePath, 'utf-8');
     
-    // Parse CSV with headers
+    
     const records = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
     });
 
-    // Validate and filter subscribers
+    
     const validSubscribers = [];
     const errors = [];
 
@@ -33,7 +32,7 @@ export function readSubscribers(filePath) {
       }
     });
 
-    // Log validation results
+    
     console.log(`\n📊 CSV Validation Results:`);
     console.log(`   ✅ Valid subscribers: ${validSubscribers.length}`);
     
@@ -51,24 +50,22 @@ export function readSubscribers(filePath) {
 }
 
 /**
- * Validate email address
- * @param {string} email - Email to validate
- * @returns {boolean} True if valid
+ * @param {string} email
+ * @returns {boolean} 
  */
 export function validateEmail(email) {
   return validator.isEmail(email);
 }
 
 /**
- * Validate subscriber record
- * @param {Object} record - CSV record
- * @param {number} lineNumber - Line number in CSV
- * @returns {Object} Validation result
+ * @param {Object} record 
+ * @param {number} lineNumber 
+ * @returns {Object} 
  */
 export function validateSubscriber(record, lineNumber) {
   const errors = [];
 
-  // Check required fields
+  
   if (!record.name || record.name.trim() === '') {
     errors.push(`Line ${lineNumber}: Missing name`);
   }
@@ -79,7 +76,7 @@ export function validateSubscriber(record, lineNumber) {
     errors.push(`Line ${lineNumber}: Invalid email format (${record.email})`);
   }
 
-  // Return validation result
+  
   if (errors.length > 0) {
     return {
       valid: false,
@@ -102,9 +99,8 @@ export function validateSubscriber(record, lineNumber) {
 }
 
 /**
- * Get subscriber count from CSV file
- * @param {string} filePath - Path to CSV file
- * @returns {number} Number of subscribers
+ * @param {string} filePath 
+ * @returns {number} 
  */
 export function getSubscriberCount(filePath) {
   try {

@@ -2,7 +2,7 @@ import { readSubscribers } from "./services/csvReader.js";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-// Get current directory
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -22,7 +22,7 @@ try {
   console.log(`Total Valid Subscribers: ${subscribers.length}`);
   console.log("=".repeat(70) + "\n");
   
-  // Show sample of first 5 subscribers
+
   if (subscribers.length > 0) {
     console.log("📋 Sample Subscribers (first 5):\n");
     subscribers.slice(0, 5).forEach((sub, index) => {

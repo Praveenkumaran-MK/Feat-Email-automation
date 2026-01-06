@@ -1,31 +1,40 @@
 import brevo from "@getbrevo/brevo";
 
-const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(
-  brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY
-);
 
-// Rate limiting configuration
+let apiInstance = null;
+
+function getApiInstance() {
+  if (!apiInstance) {
+    if (!process.env.BREVO_API_KEY) {
+      throw new Error('BREVO_API_KEY environment variable is not set');
+    }
+    apiInstance = new brevo.TransactionalEmailsApi();
+    apiInstance.setApiKey(
+      brevo.TransactionalEmailsApiApiKeys.apiKey,
+      process.env.BREVO_API_KEY
+    );
+  }
+  return apiInstance;
+}
+
+
 const RATE_LIMIT_DELAY = parseInt(process.env.RATE_LIMIT_DELAY_MS) || 2000; // 2 seconds default
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
 /**
- * Delay helper for rate limiting
- * @param {number} ms - Milliseconds to delay
+ * @param {number} ms 
  */
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Send email with retry logic and rate limiting
- * @param {string} toEmail - Recipient email
- * @param {string} subject - Email subject
- * @param {string} htmlContent - Email HTML content
- * @param {number} maxRetries - Maximum retry attempts
- * @returns {Promise} Send result
+ * @param {string} toEmail
+ * @param {string} subject
+ * @param {string} htmlContent
+ * @param {number} maxRetries 
+ * @returns {Promise} 
  */
 export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetries = MAX_RETRIES) {
   let lastError;
@@ -34,7 +43,7 @@ export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetri
     try {
       await sendEmail(toEmail, subject, htmlContent);
       
-      // Rate limiting - wait before next email
+      
       if (RATE_LIMIT_DELAY > 0) {
         await delay(RATE_LIMIT_DELAY);
       }
@@ -44,13 +53,12 @@ export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetri
     } catch (error) {
       lastError = error;
       
-      // Don't retry on certain errors
+     
       if (error.message.includes('401') || error.message.includes('Invalid API key')) {
-        throw error; // Fatal error, don't retry
+        throw error; 
       }
       
       if (attempt < maxRetries) {
-        // Exponential backoff
         const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);
         console.log(`   ⚠️  Retry ${attempt}/${maxRetries} after ${retryDelay}ms...`);
         await delay(retryDelay);
@@ -58,15 +66,14 @@ export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetri
     }
   }
   
-  // All retries failed
+  
   throw lastError;
 }
 
 /**
- * Send single email via Brevo API
- * @param {string} toEmail - Recipient email
- * @param {string} subject - Email subject
- * @param {string} htmlContent - Email HTML content
+ * @param {string} toEmail 
+ * @param {string} subject 
+ * @param {string} htmlContent
  */
 export async function sendEmail(toEmail, subject, htmlContent) {
   const email = {
@@ -77,7 +84,8 @@ export async function sendEmail(toEmail, subject, htmlContent) {
   };
 
   try {
-    await apiInstance.sendTransacEmail(email);
+    const api = getApiInstance();
+    await api.sendTransacEmail(email);
   } catch (err) {
     const errorMessage = err.response?.body?.message || err.message || 'Unknown error';
     throw new Error(`Email send failed: ${errorMessage}`);
@@ -85,8 +93,7 @@ export async function sendEmail(toEmail, subject, htmlContent) {
 }
 
 /**
- * Validate Brevo API configuration
- * @returns {boolean} True if configured correctly
+ * @returns {boolean}
  */
 export function validateBrevoConfig() {
   if (!process.env.BREVO_API_KEY) {
