@@ -1,175 +1,138 @@
 import "dotenv/config";
-import { readSubscribers } from "./services/csvReader.js";
-import { sendEmailWithRetry, validateBrevoConfig } from "./services/emailService.js";
-import { generateDailyEmail } from "./templates/emailTemplate.js";
+import { readStudents, readTeachers } from "./services/csvReader.js";
+import { sendEmailWithRetry, validateBrevoConfig, sendEmail } from "./services/emailService.js";
+import { generateODEmail } from "./templates/emailTemplate.js";
 import { sendErrorNotification, sendDailySummary } from "./services/gmailNotifier.js";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync } from "fs";
 
-// Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Configuration
-const CSV_FILE_PATH = join(__dirname, '..', 'data', 'subscribers.csv');
-const TEST_MODE = process.argv.includes('--test');
-const TEST_LIMIT = 5; // Send to first 5 subscribers in test mode
+const STUDENTS_CSV = join(__dirname, '..', 'data', 'students.csv');
+const TEACHERS_CSV = join(__dirname, '..', 'data', 'teachers.csv');
 
-/**
- * Main email sending function
- */
+
+const TEST_MODE = process.argv.includes('--test');
+
 async function sendDailyEmails() {
   const startTime = Date.now();
   
   console.log("\n" + "=".repeat(70));
-  console.log("🚀 EMAIL AUTOMATION SYSTEM - PRODUCTION MODE");
+  console.log("🚀 OD TRACKING NOTIFICATION SYSTEM");
   console.log("=".repeat(70));
   console.log(`📅 Started at: ${new Date().toLocaleString()}`);
-  console.log(`🧪 Test Mode: ${TEST_MODE ? 'YES (first 5 subscribers only)' : 'NO (all subscribers)'}`);
   console.log("=".repeat(70) + "\n");
 
-  let subscribers = [];
   let successCount = 0;
   let failureCount = 0;
-  const failedEmails = [];
+  const failedSections = [];
 
   try {
-
-    console.log("🔧 Step 1: Validating Brevo API configuration...");
     validateBrevoConfig();
-    console.log("✅ Brevo API configuration valid\n");
-
-
-    console.log("📂 Step 2: Loading subscribers from CSV...");
-    console.log(`   File: ${CSV_FILE_PATH}`);
     
-    subscribers = readSubscribers(CSV_FILE_PATH);
+    console.log("📂 Loading data...");
+    const students = readStudents(STUDENTS_CSV);
+    const teachers = readTeachers(TEACHERS_CSV);
+
+    if (!students.length) throw new Error("No student records found.");
+    if (!teachers.length) throw new Error("No teacher records found.");
+
+    // Filter students for today only
+    const today = new Date().toISOString().split('T')[0];
+    const todaysStudents = students.filter(s => s.date === today);
     
-    if (!subscribers || subscribers.length === 0) {
-      throw new Error("No valid subscribers found in CSV file");
+    console.log(`📅 Today's Date: ${today}`);
+    console.log(`✅ Found ${todaysStudents.length} students with OD today.\n`);
+
+    if (!todaysStudents.length) {
+      console.log("ℹ️ No OD records for today. Skipping email process.");
+      return;
     }
 
-    if (TEST_MODE && subscribers.length > TEST_LIMIT) {
-      console.log(`\n⚠️  TEST MODE: Limiting to first ${TEST_LIMIT} subscribers`);
-      subscribers = subscribers.slice(0, TEST_LIMIT);
-    }
+    // Group students by section
+    const studentsBySection = todaysStudents.reduce((acc, student) => {
+      const section = student.section.toLowerCase();
+      if (!acc[section]) acc[section] = [];
+      acc[section].push(student);
+      return acc;
+    }, {});
 
-    console.log(`✅ Loaded ${subscribers.length} valid subscriber(s)\n`);
-
-    console.log("📧 Step 3: Sending personalized emails...");
-    console.log(`   Rate Limit: ${process.env.RATE_LIMIT_DELAY_MS || 2000}ms between emails`);
-    console.log(`   Estimated Time: ~${Math.ceil((subscribers.length * 2) / 60)} minutes\n`);
-
-    for (let i = 0; i < subscribers.length; i++) {
-      const subscriber = subscribers[i];
-      const progress = `[${i + 1}/${subscribers.length}]`;
+    const activeSections = Object.keys(studentsBySection);
+    
+    for (const section of activeSections) {
+      const teacher = teachers.find(t => t.section.toLowerCase() === section);
+      
+      if (!teacher) {
+        console.warn(`⚠️ Warning: No teacher found for section ${section.toUpperCase()}. Skipping.`);
+        continue;
+      }
+      
+      const sectionStudents = studentsBySection[section];
+      const progress = `[Section ${section.toUpperCase()}]`;
 
       try {
+        const { subject, htmlContent } = generateODEmail(teacher, sectionStudents);
+        
+        if (TEST_MODE) {
+          console.log(`🧪 TEST MODE: Would send OD report to ${teacher.name} (${teacher.email}) for ${sectionStudents.length} students.`);
+          successCount++;
+          continue;
+        }
 
-        const { subject, htmlContent } = generateDailyEmail(subscriber);
-
-
-        await sendEmailWithRetry(subscriber.email, subject, htmlContent);
-
+        await sendEmailWithRetry(teacher.email, subject, htmlContent);
+        
         successCount++;
-        console.log(`✅ ${progress} Sent to ${subscriber.name} (${subscriber.email})`);
+        console.log(`✅ ${progress} Report sent to ${teacher.name} (${teacher.email})`);
 
       } catch (error) {
         failureCount++;
-        failedEmails.push({
-          name: subscriber.name,
-          email: subscriber.email,
+        failedSections.push({
+          section: section.toUpperCase(),
+          teacher: teacher.name,
+          email: teacher.email,
           error: error.message
         });
-        console.error(`❌ ${progress} Failed: ${subscriber.name} (${subscriber.email})`);
-        console.error(`   Error: ${error.message}`);
+        console.error(`❌ ${progress} Failed: ${error.message}`);
       }
     }
 
-
     const endTime = Date.now();
     const executionTime = ((endTime - startTime) / 1000).toFixed(2);
-    const successRate = ((successCount / subscribers.length) * 100).toFixed(1);
-
 
     console.log("\n" + "=".repeat(70));
-    console.log("📊 EXECUTION SUMMARY");
+    console.log("📊 EXECUTION SUMMARY" + (TEST_MODE ? " (DRY RUN)" : ""));
     console.log("=".repeat(70));
-    console.log(`✅ Successful:     ${successCount}/${subscribers.length} (${successRate}%)`);
-    console.log(`❌ Failed:         ${failureCount}/${subscribers.length}`);
-    console.log(`⏱️  Execution Time: ${executionTime}s`);
-    console.log(`📅 Completed at:   ${new Date().toLocaleString()}`);
+    console.log(`${TEST_MODE ? '🧪 Simulated' : '✅ Sent'} Reports:    ${successCount}`);
+    console.log(`❌ Failed Sections: ${failureCount}`);
+    console.log(`⏱️  Execution Time:  ${executionTime}s`);
     console.log("=".repeat(70));
 
-
-    if (failedEmails.length > 0) {
-      console.log("\n⚠️  FAILED EMAILS:");
-      failedEmails.forEach(({ name, email, error }) => {
-        console.log(`   - ${name} (${email}): ${error}`);
-      });
-      console.log("");
-    }
-
-
+    // Stats for Gmail notification
     const stats = {
-      total: subscribers.length,
+      total: activeSections.length,
       success: successCount,
       failed: failureCount,
       executionTime: `${executionTime}s`,
-      failedEmails: failedEmails
+      failedEmails: failedSections.map(f => ({ name: f.teacher, email: f.email, error: f.error }))
     };
 
     if (failureCount > 0) {
-
-      console.log("📧 Sending error notification to admin...");
-      await sendErrorNotification(
-        new Error(`${failureCount} email(s) failed to send`),
-        { stats, failedEmails }
-      );
-    } else {
-
-      console.log("📧 Sending daily summary to admin...");
+      await sendErrorNotification(new Error(`${failureCount} section report(s) failed`), { stats });
+    } else if (!TEST_MODE) {
       await sendDailySummary(stats);
     }
 
-
-    console.log("\n" + "=".repeat(70));
-    if (failureCount > 0) {
-      console.log("⚠️  Job completed with errors");
-      console.log("=".repeat(70) + "\n");
-      process.exit(1);
-    } else {
-      console.log("✅ Job completed successfully!");
-      console.log("=".repeat(70) + "\n");
-      process.exit(0);
-    }
+    process.exit(failureCount > 0 ? 1 : 0);
 
   } catch (error) {
-
-    console.error("\n" + "=".repeat(70));
-    console.error("❌ FATAL ERROR");
-    console.error("=".repeat(70));
-    console.error(`Error: ${error.message}`);
-    console.error(`Stack: ${error.stack}`);
-    console.error("=".repeat(70) + "\n");
-
-
+    console.error("\n❌ FATAL ERROR:", error.message);
     try {
-      await sendErrorNotification(error, {
-        stats: {
-          total: subscribers.length,
-          success: successCount,
-          failed: failureCount
-        },
-        failedEmails
-      });
-    } catch (notificationError) {
-      console.error("Failed to send error notification:", notificationError.message);
-    }
-
+      await sendErrorNotification(error);
+    } catch (e) {}
     process.exit(1);
   }
 }
-
 
 sendDailyEmails();

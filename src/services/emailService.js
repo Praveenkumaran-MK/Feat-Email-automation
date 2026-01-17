@@ -33,15 +33,16 @@ function delay(ms) {
  * @param {string} toEmail
  * @param {string} subject
  * @param {string} htmlContent
+ * @param {Array} attachments
  * @param {number} maxRetries 
  * @returns {Promise} 
  */
-export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetries = MAX_RETRIES) {
+export async function sendEmailWithRetry(toEmail, subject, htmlContent, attachments = [], maxRetries = MAX_RETRIES) {
   let lastError;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await sendEmail(toEmail, subject, htmlContent);
+      await sendEmail(toEmail, subject, htmlContent, attachments);
       
       
       if (RATE_LIMIT_DELAY > 0) {
@@ -74,14 +75,19 @@ export async function sendEmailWithRetry(toEmail, subject, htmlContent, maxRetri
  * @param {string} toEmail 
  * @param {string} subject 
  * @param {string} htmlContent
+ * @param {Array} attachments
  */
-export async function sendEmail(toEmail, subject, htmlContent) {
+export async function sendEmail(toEmail, subject, htmlContent, attachments = []) {
   const email = {
     sender: { email: process.env.SENDER_EMAIL },
     to: [{ email: toEmail }],
     subject,
     htmlContent,
   };
+
+  if (attachments && attachments.length > 0) {
+    email.attachment = attachments;
+  }
 
   try {
     const api = getApiInstance();

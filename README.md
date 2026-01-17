@@ -26,19 +26,24 @@ A production-ready email automation system that sends personalized daily emails 
 - `.github/workflows/` - Daily automation schedule
 - `.env.example` - Template for credentials
 
-## 📊 Subscriber Management
+## 📊 Data Management
 
-Update `data/subscribers.csv` with your recipient list.
-- Format: `name,email,subscribed_date,department,preferences`
-- Validate your data: `npm run validate`
+Update files in the `data/` directory:
+- `data/students.csv`: List of students on OD. Format: `name,emailid,regno,section,event,date`
+- `data/teachers.csv`: List of teachers to notify. Format: `section,teacher_name,emailid`
+
+Validate your data before running:
+```bash
+npm run validate
+```
 
 ## ⚙️ Configuration
 
 | Feature | Setting | Location |
 |---------|---------|----------|
-| **Schedule** | `40 5 * * *` (UTC) | `.github/workflows/daily-email.yml` |
-| **Rate Limit** | 2000ms | `.env` or `src/sendEmails.js` |
-| **Max Emails** | 200/day | `package.json` |
+| **Schedule** | `0 2 * * *` (7:30 AM IST) | `.github/workflows/daily-email.yml` |
+| **Rate Limit** | 2000ms | `.env` or `src/services/emailService.js` |
+| **Max Emails** | 200/day | GitHub Workflow env |
 
 ## 🛠️ GitHub Actions Setup
 
