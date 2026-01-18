@@ -1,9 +1,9 @@
 name: Daily Email Automation - Production
 
 on:
-  # Run daily at 7:30 AM IST (2:00 AM UTC)
+  
   schedule:
-    - cron: '30 7 * * *'
+    - cron: '01 12 * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
