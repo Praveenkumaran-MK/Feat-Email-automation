@@ -37,13 +37,9 @@ async function sendDailyEmails() {
     hour: '2-digit' 
   }), 10);
 
+  // Time check disabled - emails will be sent whenever workflow runs
   if (!TEST_MODE) {
-    if (currentHour !== targetHour) {
-      console.log(`⏳ Scheduled for ${targetTime} (${targetHour}:00). Current time is ${currentHour}:00.`);
-      console.log("💤 Skipping execution until scheduled time.");
-      return;
-    }
-    console.log(`✅ Time match! Scheduled: ${targetHour}:00, Current: ${currentHour}:00. Proceeding...`);
+    console.log(`✅ Running at ${currentHour}:00 (Scheduled time: ${targetTime}). Proceeding...`);
   } else {
     console.log(`🧪 TEST MODE: Skipping time check (Scheduled: ${targetTime}, Current: ${currentHour}:00)`);
   }
