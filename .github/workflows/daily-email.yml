@@ -3,7 +3,7 @@ name: Daily Email Automation - Production
 on:
   # Run daily at 7:30 AM IST (2:00 AM UTC)
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 * * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
@@ -49,14 +49,20 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           
+          # Optional: Timezone configuration (default: UTC)
+          APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
+          
           # Optional: Rate limiting (defaults to 2000ms if not set)
           RATE_LIMIT_DELAY_MS: 2000
           MAX_EMAILS_PER_DAY: 200
+          
+          # Optional: Scheduled Time (24h format, default 07:00)
+          SEND_TIME: ${{ secrets.SEND_TIME }}
         run: npm run send
       
       - name: Upload execution logs
         if: always()  # Upload logs on both success and failure
-        uses: actions/upload-artifact@65c4c4a1dd4d68249089f899e69188e622ac2f1b # v4.6.0
+        uses: actions/upload-artifact@v4
         with:
           name: email-logs-${{ github.run_number }}
           path: |

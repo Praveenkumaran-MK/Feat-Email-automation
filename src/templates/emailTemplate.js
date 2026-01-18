@@ -6,11 +6,13 @@
  * @returns {Object} Email subject and HTML content
  */
 export function generateODEmail(teacher, students, date = new Date()) {
+  const timeZone = process.env.APP_TIMEZONE || 'UTC';
   const formattedDate = date.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
-    day: 'numeric' 
+    day: 'numeric',
+    timeZone 
   });
   
   const subject = `OD Notification - Section ${teacher.section.toUpperCase()} - ${formattedDate}`;

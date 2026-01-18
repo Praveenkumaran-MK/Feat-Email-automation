@@ -19,11 +19,34 @@ const TEST_MODE = process.argv.includes('--test');
 async function sendDailyEmails() {
   const startTime = Date.now();
   
+  const timeZone = process.env.APP_TIMEZONE || 'UTC';
+  
   console.log("\n" + "=".repeat(70));
   console.log("🚀 OD TRACKING NOTIFICATION SYSTEM");
   console.log("=".repeat(70));
-  console.log(`📅 Started at: ${new Date().toLocaleString()}`);
+  console.log(`📅 Started at: ${new Date().toLocaleString('en-US', { timeZone })}`);
   console.log("=".repeat(70) + "\n");
+
+  // Time check logic
+  const targetTime = process.env.SEND_TIME || "07:00";
+  const [targetHour] = targetTime.split(':').map(Number);
+  
+  const currentHour = parseInt(new Date().toLocaleTimeString('en-US', { 
+    timeZone, 
+    hour12: false, 
+    hour: '2-digit' 
+  }), 10);
+
+  if (!TEST_MODE) {
+    if (currentHour !== targetHour) {
+      console.log(`⏳ Scheduled for ${targetTime} (${targetHour}:00). Current time is ${currentHour}:00.`);
+      console.log("💤 Skipping execution until scheduled time.");
+      return;
+    }
+    console.log(`✅ Time match! Scheduled: ${targetHour}:00, Current: ${currentHour}:00. Proceeding...`);
+  } else {
+    console.log(`🧪 TEST MODE: Skipping time check (Scheduled: ${targetTime}, Current: ${currentHour}:00)`);
+  }
 
   let successCount = 0;
   let failureCount = 0;
@@ -40,7 +63,8 @@ async function sendDailyEmails() {
     if (!teachers.length) throw new Error("No teacher records found.");
 
     // Filter students for today only
-    const today = new Date().toISOString().split('T')[0];
+    const timeZone = process.env.APP_TIMEZONE || 'UTC';
+    const today = new Date().toLocaleDateString('en-CA', { timeZone }); // YYYY-MM-DD format
     const todaysStudents = students.filter(s => s.date === today);
     
     console.log(`📅 Today's Date: ${today}`);
