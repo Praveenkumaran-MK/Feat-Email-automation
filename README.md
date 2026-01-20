@@ -51,5 +51,56 @@ npm run validate
 2. Add secrets: `BREVO_API_KEY`, `SENDER_EMAIL`.
 3. Optionally add: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `ADMIN_EMAIL` for notifications.
 
+# Email Automation - Quick Reference
+
+## 🚨 **CRITICAL: Sender Email Not Verified**
+
+**Your emails aren't being delivered because `yoUr Email@gmail.com` is not verified in Brevo!**
+
+### ✅ Fix Now (2 minutes):
+1. Go to https://app.brevo.com/senders/list
+2. Add sender: `ucamsurveillance@gmail.com`
+3. Click verification link in your Gmail
+4. Run: `npm run check:brevo` to confirm
+
+---
+
+## 🧪 Diagnostic Commands
+
+```bash
+# Check Brevo configuration & sender verification
+npm run check:brevo
+
+# Send a test email
+npm run test:email
+
+# Full system diagnostic
+npm run diagnose
+
+# Dry run (no emails sent)
+npm run test:local
+
+# Send real emails (after verification!)
+npm run send
+```
+
+## 📋 Why Emails Weren't Sent
+
+1. ✅ Code works correctly
+2. ✅ Brevo API accepts requests
+3. ❌ **Brevo drops emails** (unverified sender)
+4. ✅ Logs show "success" (API call succeeded)
+5. ❌ **No delivery** (silent failure)
+
+## 🎯 Next Steps
+
+1. **Verify sender** (see above)
+2. **Test**: `npm run test:email`
+3. **Check inbox** for test email
+4. **Update CSV** with today's date: `2026-01-20`
+5. **Send**: `npm run send`
+
+
+
 ---
 *Created by Praveenkumaran-MK*

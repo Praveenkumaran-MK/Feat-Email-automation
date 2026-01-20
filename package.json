@@ -7,7 +7,10 @@
   "scripts": {
     "send": "node src/sendEmails.js",
     "validate": "node src/validateCSV.js",
-    "test:local": "node src/sendEmails.js --test"
+    "test:local": "node src/sendEmails.js --test",
+    "diagnose": "node src/diagnose.js",
+    "test:email": "node src/testEmail.js",
+    "check:brevo": "node src/checkBrevo.js"
   },
   "repository": {
     "type": "git",
