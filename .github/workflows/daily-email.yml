@@ -3,7 +3,7 @@ name: Daily Email Automation - Production
 on:
   
   schedule:
-    - cron: '10 11 * * *'
+    - cron: '30 6 * * *'
   
   # Allow manual trigger for testing
   workflow_dispatch:
