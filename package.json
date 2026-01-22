@@ -2,15 +2,12 @@
   "name": "email-automation",
   "version": "2.0.0",
   "description": "Production-ready email automation system - 200 personalized emails daily",
-  "main": "index.js",
+  "main": "src/sendEmails.js",
   "type": "module",
   "scripts": {
-    "send": "node src/sendEmails.js",
-    "validate": "node src/validateCSV.js",
-    "test:local": "node src/sendEmails.js --test",
-    "diagnose": "node src/diagnose.js",
-    "test:email": "node src/testEmail.js",
-    "check:brevo": "node src/checkBrevo.js"
+    "start": "node src/index.js",
+    "send": "node src/index.js",
+    "test:local": "node src/index.js --test"
   },
   "repository": {
     "type": "git",
