@@ -3,9 +3,8 @@ name: Daily Email Automation - Production
 on:
   
   schedule:
-    - cron: '10 7 * * *'
-  
-  # Allow manual trigger for testing
+    - cron: '30 23 * * *' 
+    # Allow manual trigger for testing
   workflow_dispatch:
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       
       - name: Setup Node.js
-        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -36,25 +35,13 @@ jobs:
             echo "::error::SENDER_EMAIL secret is not configured"
             exit 1
           fi
-          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_JSON secret is not configured"
-            exit 1
-          fi
           echo "✓ Required secrets are configured"
-      
-      - name: Setup Firebase credentials
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > firebase-service-account.json
-          echo "✓ Firebase service account file created"
       
       - name: Send daily emails
         env:
           # Required: Brevo API configuration
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-          
-          # Required: Firebase configuration
-          FIREBASE_SERVICE_ACCOUNT_PATH: ./firebase-service-account.json
           
           # Optional: Gmail notifications for errors and summaries
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
@@ -69,6 +56,7 @@ jobs:
           MAX_EMAILS_PER_DAY: 200
           
           # Optional: Scheduled Time (24h format, default 07:00)
+          SEND_TIME: ${{ secrets.SEND_TIME }}
         run: npm run send
       
       - name: Upload execution logs
@@ -81,4 +69,3 @@ jobs:
             logs/
           retention-days: 30
           if-no-files-found: ignore
-

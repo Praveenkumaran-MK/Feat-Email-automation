@@ -1,7 +1,7 @@
 import "dotenv/config";
 import dns from "dns/promises";
 import { getODRequestsByDate, getStudentById, getAdvisors, getFacultyByEmail, getDepartmentRoles } from "./services/firestoreService.js";
-import { sendEmail, validateBrevoConfig } from "./services/emailService.js";
+import { sendEmail, sendAdminEmail, validateBrevoConfig } from "./services/emailService.js";
 import { generateODEmail } from "./templates/emailTemplate.js";
 import { generateAnalyticsEmail } from "./templates/analyticsEmailTemplate.js";
 
@@ -296,7 +296,7 @@ async function main() {
   if (ADMIN_EMAIL) {
     try {
       const reportHTML = generateAdminReportHTML(today, deliveryResults);
-      await sendEmail(ADMIN_EMAIL, `Admin Report - ${today}`, reportHTML);
+      await sendAdminEmail(ADMIN_EMAIL, `Admin Report - ${today}`, reportHTML);
       console.log(`\nAdmin report sent to ${ADMIN_EMAIL}`);
     } catch (error) {
       console.error("\nFailed to send admin report:", error.message);

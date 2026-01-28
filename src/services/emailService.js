@@ -28,3 +28,31 @@ export function validateBrevoConfig() {
   if (!process.env.BREVO_API_KEY) throw new Error("BREVO_API_KEY is missing");
   if (!process.env.SENDER_EMAIL) throw new Error("SENDER_EMAIL is missing");
 }
+
+import nodemailer from "nodemailer";
+
+export async function sendAdminEmail(toEmail, subject, htmlContent) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.GMAIL_USER,
+    to: toEmail,
+    subject: subject,
+    html: htmlContent,
+  };
+
+  try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Admin Email sent to ${toEmail}. Message ID: ${info.messageId}`);
+      return info;
+  } catch (error) {
+      console.error(`Error sending admin email to ${toEmail}:`, error.message);
+      throw error;
+  }
+}
