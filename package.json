@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/index.js",
     "send": "node src/index.js",
-    "test:local": "node src/index.js --test"
+    "test:local": "node src/index.js --test",
+    "migrate": "node scripts/migrateData.js"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,9 @@
     "@getbrevo/brevo": "^3.0.1",
     "csv-parse": "^5.5.3",
     "dotenv": "^17.2.3",
+    "firebase-admin": "^13.6.0",
     "nodemailer": "^6.9.8",
+    "sib-api-v3-sdk": "^8.5.0",
     "validator": "^13.11.0"
   }
 }
