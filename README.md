@@ -54,6 +54,26 @@ Email-automation/
 └── .env.example                # Template for credentials
 ```
 
+## 🏗️ Technical Architecture
+
+This system allows for a seamless flow of data from the user to the recipient.
+
+```mermaid
+graph TD
+    User([User / Scheduler]) -->|Triggers| GA[GitHub Actions]
+    GA -->|Runs| NodeApp[Node.js Automation Script]
+    
+    subgraph Data Layer
+        NodeApp -->|Reads/Writes| Firestore[(Firebase Firestore)]
+        Firestore -- Returns Data --> NodeApp
+    end
+    
+    subgraph External Services
+        NodeApp -->|API Call| Brevo[Brevo Email API]
+        Brevo -->|Sends Email| recipient([Faculty / HOD])
+    end
+```
+
 ## 📊 Data Management
 
 Data is now stored in **Firebase Firestore** with two collections:
@@ -120,16 +140,7 @@ Data is managed through your web application. The email automation system has **
 ### Available Commands
 
 ```bash
-# Check Brevo configuration & sender verification
-npm run check:brevo
-
-# Send a test email
-npm run test:email
-
-# Full system diagnostic
-npm run diagnose
-
-# Dry run (no emails sent)
+# Dry run (no emails sent) - sends to first 5 subscribers
 npm run test:local
 
 # Send real emails (production)
@@ -147,7 +158,6 @@ npm run send
 1. Go to [Brevo Senders List](https://app.brevo.com/senders/list)
 2. Add your sender email
 3. Click verification link in your email inbox
-4. Run `npm run check:brevo` to confirm
 
 ### Why Emails Weren't Sent
 
@@ -157,13 +167,36 @@ npm run send
 - ✅ Logs show "success" (API call succeeded)
 - ❌ **No delivery** (silent failure)
 
-## 📝 Workflow
+## 📝 Automation Workflow
 
-1. **Verify sender** in Brevo
-2. **Test**: `npm run test:email`
-3. **Check inbox** for test email
-4. **Update CSV** with current date
-5. **Send**: `npm run send`
+The following diagram illustrates the step-by-step process executed by the system daily:
+
+```mermaid
+flowchart TD
+    Start([Start: CRON Schedule / Manual Trigger]) --> Init[Initialize System]
+    Init --> FetchOD[Fetch Today's OD Requests]
+    FetchOD --> CheckOD{Requests Found?}
+    
+    CheckOD -- No --> LogNoData[Log: No ODs for today] --> End([End Process])
+    CheckOD -- Yes --> FetchStud[Fetch Student Details]
+    
+    FetchStud --> FetchAdv[Fetch Advisor Mapping]
+    FetchAdv --> Process[Map Request to content]
+    
+    Process --> GenEmail[Generate Email Template]
+    GenEmail --> SendBrevo[Send via Brevo API]
+    
+    SendBrevo --> Success{Success?}
+    Success -- Yes --> LogSuccess[Log Success]
+    Success -- No --> LogError[Log Error & Notify Admin]
+    
+    LogSuccess --> LoopNext[Process Next Request]
+    LogError --> LoopNext
+    
+    LoopNext --> AllDone{All Processed?}
+    AllDone -- No --> GenEmail
+    AllDone -- Yes --> End
+```
 
 ## 📄 License
 
