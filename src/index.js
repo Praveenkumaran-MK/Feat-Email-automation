@@ -1,451 +1,312 @@
 import "dotenv/config";
 import dns from "dns/promises";
-import { readStudents, readTeachers } from "./services/csvReader.js";
-import { sendEmail, validateBrevoConfig } from "./services/emailService.js";
+import { getODRequestsByDate, getStudentById, getAdvisors, getFacultyByEmail, getDepartmentRoles } from "./services/firestoreService.js";
+import { sendEmail, sendAdminEmail, validateBrevoConfig } from "./services/emailService.js";
 import { generateODEmail } from "./templates/emailTemplate.js";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { generateAnalyticsEmail } from "./templates/analyticsEmailTemplate.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const STUDENTS_CSV = join(__dirname, "..", "data", "students.csv");
-const TEACHERS_CSV = join(__dirname, "..", "data", "teachers.csv");
-
-// Configuration
-const MAX_EMAIL_QUOTA = parseInt(process.env.MAX_EMAIL_QUOTA) || 300;
-const RATE_LIMIT_MS = 200; // 200ms between sends
+const MAX_emails = parseInt(process.env.MAX_EMAILS_PER_DAY) || parseInt(process.env.MAX_EMAIL_QUOTA) || 300;
+const RATE_LIMIT_MS = parseInt(process.env.RATE_LIMIT_DELAY_MS) || 200;
 const APP_TIMEZONE = process.env.APP_TIMEZONE || "UTC";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
-// Sleep utility
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Email format validation
 function validateEmailFormat(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-// MX Record validation
 async function checkMXRecord(email) {
   try {
     const domain = email.split("@")[1];
     if (!domain) return false;
-    
     const mxRecords = await dns.resolveMx(domain);
     return mxRecords && mxRecords.length > 0;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
 
-// Generate diagnostic summary
-function generateDiagnosticLog() {
-  const diagnostics = {
-    timestamp: new Date().toLocaleString("en-US", { timeZone: APP_TIMEZONE }),
-    envVars: {},
-    warnings: [],
-    errors: []
-  };
-
-  // Check environment variables
-  const requiredVars = ["BREVO_API_KEY", "SENDER_EMAIL", "ADMIN_EMAIL"];
-  const optionalVars = ["GMAIL_USER", "GMAIL_APP_PASSWORD", "APP_TIMEZONE"];
-
-  requiredVars.forEach(varName => {
-    if (process.env[varName]) {
-      diagnostics.envVars[varName] = "✅ Set";
-    } else {
-      diagnostics.envVars[varName] = "❌ Missing";
-      diagnostics.errors.push(`${varName} is not set`);
-    }
-  });
-
-  optionalVars.forEach(varName => {
-    if (process.env[varName]) {
-      diagnostics.envVars[varName] = "✅ Set";
-    } else {
-      diagnostics.envVars[varName] = "⚠️ Not Set (Optional)";
-    }
-  });
-
-  return diagnostics;
-}
-
-// Generate admin report HTML
-function generateAdminReportHTML(diagnostics, deliveryResults, stats) {
+function generateAdminReportHTML(timestamp, deliveryResults) {
   const successCount = deliveryResults.filter(r => r.status === "SUCCESS").length;
   const failureCount = deliveryResults.filter(r => r.status !== "SUCCESS").length;
-
-  const envVarRows = Object.entries(diagnostics.envVars)
-    .map(([key, value]) => `
-      <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${key}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${value}</td>
-      </tr>
-    `).join("");
-
-  const deliveryRows = deliveryResults.map(result => {
-    const statusColor = result.status === "SUCCESS" ? "#10b981" : "#ef4444";
-    const statusIcon = result.status === "SUCCESS" ? "✅" : "❌";
-    
-    return `
-      <tr>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${result.section}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${result.teacherName}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; font-family: monospace; font-size: 12px;">${result.email}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center; color: ${statusColor}; font-weight: bold;">${statusIcon} ${result.status}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${result.reason}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${result.studentCount}</td>
-      </tr>
-    `;
-  }).join("");
-
-  const warningSection = diagnostics.warnings.length > 0 ? `
-    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0;">
-      <h3 style="margin: 0 0 10px 0; color: #92400e;">⚠️ Warnings</h3>
-      <ul style="margin: 0; padding-left: 20px;">
-        ${diagnostics.warnings.map(w => `<li>${w}</li>`).join("")}
-      </ul>
-    </div>
-  ` : "";
-
-  const errorSection = diagnostics.errors.length > 0 ? `
-    <div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 12px; margin: 20px 0;">
-      <h3 style="margin: 0 0 10px 0; color: #991b1b;">❌ Errors</h3>
-      <ul style="margin: 0; padding-left: 20px;">
-        ${diagnostics.errors.map(e => `<li>${e}</li>`).join("")}
-      </ul>
-    </div>
-  ` : "";
+  
+  const rows = deliveryResults.map(r => `
+    <tr style="background-color: ${r.status === 'SUCCESS' ? '#f0fdf4' : '#fef2f2'};">
+      <td style="border: 1px solid #e5e7eb; padding: 8px;">${r.section}</td>
+      <td style="border: 1px solid #e5e7eb; padding: 8px;">${r.email}</td>
+      <td style="border: 1px solid #e5e7eb; padding: 8px; font-weight: bold; color: ${r.status === 'SUCCESS' ? '#166534' : '#991b1b'}">${r.status}</td>
+      <td style="border: 1px solid #e5e7eb; padding: 8px; color: #374151;">${r.reason || '-'}</td>
+    </tr>
+  `).join('');
 
   return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>Email Automation - Admin Report</title>
-    </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px;">
-      
-      <!-- Header -->
-      <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px;">
-        <img src="https://raw.githubusercontent.com/Praveenkumaran-MK/Feat-Email-automation/main/data/cit_logo.png" alt="CIT Logo" style="max-width: 120px; height: auto;">
-        <h1 style="margin: 10px 0; color: #1e3a8a;">Email Automation System</h1>
-        <h2 style="margin: 5px 0; color: #64748b; font-weight: normal;">Daily Admin Report</h2>
-        <p style="margin: 5px 0; color: #64748b;">${diagnostics.timestamp}</p>
-      </div>
-
-      ${errorSection}
-      ${warningSection}
-
-      <!-- Part A: Diagnostic Summary -->
-      <div style="margin-bottom: 30px;">
-        <h2 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📊 Diagnostic Summary</h2>
-        
-        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
-          <h3 style="margin-top: 0; color: #475569;">System Overview</h3>
-          <ul style="list-style: none; padding: 0;">
-            <li style="padding: 5px 0;"><strong>Total Students Today:</strong> ${stats.totalStudentsToday}</li>
-            <li style="padding: 5px 0;"><strong>Active Sections:</strong> ${stats.activeSections.join(", ").toUpperCase()}</li>
-            <li style="padding: 5px 0;"><strong>Missing Teachers:</strong> ${stats.missingTeachers.length > 0 ? stats.missingTeachers.join(", ").toUpperCase() : "None"}</li>
-            <li style="padding: 5px 0;"><strong>Execution Time:</strong> ${stats.executionTime}</li>
-          </ul>
-        </div>
-
-        <h3 style="color: #475569;">Environment Variables</h3>
-        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-          <thead>
-            <tr style="background-color: #f1f5f9;">
-              <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Variable</th>
-              <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${envVarRows}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Part B: Delivery Status -->
-      <div style="margin-bottom: 30px;">
-        <h2 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📧 Delivery Status Report</h2>
-        
-        <div style="display: flex; gap: 20px; margin: 20px 0;">
-          <div style="flex: 1; background-color: #d1fae5; padding: 15px; border-radius: 8px; text-align: center;">
-            <div style="font-size: 32px; font-weight: bold; color: #065f46;">${successCount}</div>
-            <div style="color: #047857; font-weight: 500;">Successful</div>
+    <html>
+      <body style="font-family: 'Segoe UI', sans-serif; line-height: 1.5; color: #111;">
+        <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+          
+          <h2 style="color: #1e3a8a; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Email Automation Report</h2>
+          <p style="color: #6b7280;">Date: <strong>${timestamp}</strong></p>
+          
+          <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+             <div style="background: #dcfce7; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
+               <strong style="display: block; font-size: 24px; color: #166534;">${successCount}</strong>
+               <span style="color: #166534;">Sent Successfully</span>
+             </div>
+             <div style="background: #fee2e2; padding: 15px; border-radius: 8px; flex: 1; text-align: center;">
+               <strong style="display: block; font-size: 24px; color: #991b1b;">${failureCount}</strong>
+               <span style="color: #991b1b;">Failed</span>
+             </div>
           </div>
-          <div style="flex: 1; background-color: #fee2e2; padding: 15px; border-radius: 8px; text-align: center;">
-            <div style="font-size: 32px; font-weight: bold; color: #991b1b;">${failureCount}</div>
-            <div style="color: #dc2626; font-weight: 500;">Failed</div>
-          </div>
+
+          <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+            <thead>
+              <tr style="background: #f3f4f6; text-align: left;">
+                <th style="border: 1px solid #e5e7eb; padding: 10px;">Context / Section</th>
+                <th style="border: 1px solid #e5e7eb; padding: 10px;">Recipient</th>
+                <th style="border: 1px solid #e5e7eb; padding: 10px;">Status</th>
+                <th style="border: 1px solid #e5e7eb; padding: 10px;">Details / Reason</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          
+          <p style="margin-top: 30px; font-size: 12px; color: #9ca3af; text-align: center;">Generated by Email Automation System</p>
         </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px;">
-          <thead>
-            <tr style="background-color: #1e3a8a; color: white;">
-              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">Section</th>
-              <th style="border: 1px solid #ddd; padding: 10px;">Teacher Name</th>
-              <th style="border: 1px solid #ddd; padding: 10px;">Email</th>
-              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">Status</th>
-              <th style="border: 1px solid #ddd; padding: 10px;">Reason</th>
-              <th style="border: 1px solid #ddd; padding: 10px; text-align: center;">Students</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${deliveryRows}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Footer -->
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">
-        <p>Chennai Institute of Technology | Automated Email System</p>
-        <p>This is an automated report. Please do not reply to this email.</p>
-      </div>
-
-    </body>
-    </html>
-  `;
+      </body>
+    </html>`;
 }
 
-// Main function
 async function main() {
-  const startTime = Date.now();
-
-  console.log("\n" + "=".repeat(70));
-  console.log("🚀 EMAIL AUTOMATION SYSTEM - PRODUCTION MODE");
-  console.log("=".repeat(70));
-  console.log(`📅 Started at: ${new Date().toLocaleString("en-US", { timeZone: APP_TIMEZONE })}`);
-  console.log("=".repeat(70) + "\n");
-
-  // ============================================================================
-  // PHASE 1: SYSTEM DIAGNOSTICS
-  // ============================================================================
-  console.log("📋 PHASE 1: SYSTEM DIAGNOSTICS");
-  console.log("-".repeat(70));
-
-  const diagnostics = generateDiagnosticLog();
-
-  console.log("\n🔧 Environment Variables:");
-  Object.entries(diagnostics.envVars).forEach(([key, value]) => {
-    console.log(`   ${key}: ${value}`);
-  });
-
-  // Validate Brevo configuration
-  try {
-    validateBrevoConfig();
-    console.log("\n✅ Brevo configuration validated");
-  } catch (error) {
-    diagnostics.errors.push(`Brevo configuration error: ${error.message}`);
-    console.error(`\n❌ Brevo configuration error: ${error.message}`);
-  }
-
-  // Check admin email
-  if (!ADMIN_EMAIL) {
-    diagnostics.errors.push("ADMIN_EMAIL is not set - cannot send admin report");
-    console.error("❌ ADMIN_EMAIL is not set - admin report will not be sent");
-  }
-
-  // Load CSV data
-  console.log("\n📂 Loading CSV data...");
-  let students, teachers;
+  console.log("Starting Email Automation...");
   
   try {
-    students = readStudents(STUDENTS_CSV);
-    console.log(`   ✅ Loaded ${students.length} students`);
+    validateBrevoConfig();
   } catch (error) {
-    diagnostics.errors.push(`Failed to load students.csv: ${error.message}`);
-    console.error(`   ❌ Failed to load students.csv: ${error.message}`);
-    students = [];
+    console.error("Config Error:", error.message);
+    process.exit(1);
   }
 
-  try {
-    teachers = readTeachers(TEACHERS_CSV);
-    console.log(`   ✅ Loaded ${teachers.length} teachers`);
-  } catch (error) {
-    diagnostics.errors.push(`Failed to load teachers.csv: ${error.message}`);
-    console.error(`   ❌ Failed to load teachers.csv: ${error.message}`);
-    teachers = [];
-  }
-
-  // Filter students for today
   const today = new Date().toLocaleDateString("en-CA", { timeZone: APP_TIMEZONE });
-  const todaysStudents = students.filter(s => s.date === today);
+  console.log(`Processing date: ${today}`);
 
-  console.log(`\n📅 Date Check:`);
-  console.log(`   Today's Date: ${today}`);
-  console.log(`   Students with OD today: ${todaysStudents.length}`);
-
-  if (todaysStudents.length === 0) {
-    diagnostics.warnings.push("No students have OD today - no emails will be sent");
-    console.log("   ⚠️ No students with OD today");
+  let odRequests;
+  try {
+    odRequests = await getODRequestsByDate(today);
+  } catch (error) {
+    console.error("OD Request Fetch Error:", error.message);
+    process.exit(1);
   }
 
-  // Group students by section
-  const studentsBySection = todaysStudents.reduce((acc, student) => {
-    const section = student.section.toLowerCase();
-    if (!acc[section]) acc[section] = [];
-    acc[section].push(student);
-    return acc;
-  }, {});
+  if (odRequests.length === 0) {
+    console.log("No OD requests found today.");
+    process.exit(0);
+  }
 
-  const activeSections = Object.keys(studentsBySection);
-  console.log(`\n🗂️ Active Sections: ${activeSections.length > 0 ? activeSections.join(", ").toUpperCase() : "None"}`);
+  const groupedData = {};
+  
+  const allDepartments = new Set();
 
-  // Check teacher mapping
-  const missingTeachers = [];
-  activeSections.forEach(section => {
-    const teacher = teachers.find(t => t.section.toLowerCase() === section);
-    if (!teacher) {
-      missingTeachers.push(section);
-      diagnostics.warnings.push(`No teacher assigned for section ${section.toUpperCase()}`);
-      console.log(`   ⚠️ Missing teacher for section ${section.toUpperCase()}`);
+  for (const request of odRequests) {
+    if (!request.studentId) continue;
+
+    const student = await getStudentById(request.studentId);
+    if (!student) continue;
+
+    if (student.department) {
+      allDepartments.add(student.department);
     }
-  });
 
-  console.log("\n" + "=".repeat(70) + "\n");
+    // Filter: Must be approved by HOD
+    const hasHodApproval = request.approvalChain.some(
+      approval => approval.role === 'hod' && approval.action === 'approved'
+    );
+    
+    if (!hasHodApproval) continue;
 
-  // ============================================================================
-  // PHASE 2: EMAIL SENDING LOOP
-  // ============================================================================
-  console.log("📧 PHASE 2: EMAIL SENDING");
-  console.log("-".repeat(70));
+    const department = student.department || "Unknown";
+    const section = student.section || "Unknown";
+    const groupKey = `${department}_${section}`;
+
+    if (!groupedData[groupKey]) {
+      groupedData[groupKey] = { department, section, students: [] };
+    }
+
+    groupedData[groupKey].students.push({
+      ...student,
+      reason: request.reason || "OD",
+      event: request.type || request.reason || "Event",
+      id: request.studentId
+    });
+  }
 
   const deliveryResults = [];
   let emailsSent = 0;
+  const activeSections = Object.keys(groupedData);
 
-  for (const section of activeSections) {
-    const teacher = teachers.find(t => t.section.toLowerCase() === section);
+  for (const groupKey of activeSections) {
+    const group = groupedData[groupKey];
+    const advisorMapping = await getAdvisors(group.department, group.section);
     
-    if (!teacher) {
-      deliveryResults.push({
-        section: section.toUpperCase(),
-        teacherName: "N/A",
-        email: "N/A",
-        status: "FAILED",
-        reason: "No teacher assigned for this section",
-        studentCount: studentsBySection[section].length
-      });
-      console.log(`❌ [Section ${section.toUpperCase()}] No teacher assigned`);
+    if (!advisorMapping || !advisorMapping.advisorEmails?.length) {
+      console.log(`No advisors for ${groupKey}`);
+      deliveryResults.push({ section: groupKey, email: "N/A", status: "SKIPPED", reason: "No advisors mapped" });
       continue;
     }
 
-    const sectionStudents = studentsBySection[section];
-    const result = {
-      section: section.toUpperCase(),
-      teacherName: teacher.name,
-      email: teacher.email,
-      status: "PENDING",
-      reason: "",
-      studentCount: sectionStudents.length
-    };
+    for (const email of advisorMapping.advisorEmails) {
+      const result = { section: groupKey, email, status: "PENDING" };
 
-    console.log(`\n[Section ${section.toUpperCase()}] Processing ${teacher.name} (${teacher.email})...`);
+      if (!validateEmailFormat(email) || !(await checkMXRecord(email)) || emailsSent >= MAX_emails) {
+        let reason = "Invalid Format";
+        if (emailsSent >= MAX_emails) reason = "Daily Quota Exceeded";
+        else if (!(await checkMXRecord(email))) reason = "MX Record Missing";
 
-    // Step 1: Syntax Check
-    if (!validateEmailFormat(teacher.email)) {
-      result.status = "FAILED";
-      result.reason = "Invalid email format";
-      deliveryResults.push(result);
-      console.log(`   ❌ FAILED: Invalid email format`);
-      continue;
-    }
-    console.log(`   ✅ Syntax check passed`);
+        result.status = "FAILED";
+        result.reason = reason;
+        deliveryResults.push(result);
+        continue;
+      }
 
-    // Step 2: MX Record Check
-    const hasMXRecord = await checkMXRecord(teacher.email);
-    if (!hasMXRecord) {
-      const domain = teacher.email.split("@")[1];
-      result.status = "FAILED";
-      result.reason = `Domain '${domain}' not found (MX record lookup failed)`;
+      try {
+        const facultyDetails = await getFacultyByEmail(email);
+        const teacherName = facultyDetails ? facultyDetails.name : "Class Advisor";
+        
+        const teacherProfile = { 
+          name: teacherName, 
+          section: group.section, 
+          department: group.department 
+        };
+        const { subject, htmlContent } = generateODEmail(teacherProfile, group.students);
+        await sendEmail(email, subject, htmlContent);
+        
+        result.status = "SUCCESS";
+        emailsSent++;
+        await sleep(RATE_LIMIT_MS);
+      } catch (error) {
+        result.status = "FAILED";
+        result.reason = error.message;
+      }
       deliveryResults.push(result);
-      console.log(`   ❌ FAILED: Domain '${domain}' not found (no MX records)`);
-      continue;
-    }
-    console.log(`   ✅ MX record check passed`);
-
-    // Step 3: Quota Safety Check
-    if (emailsSent >= MAX_EMAIL_QUOTA) {
-      result.status = "FAILED";
-      result.reason = `Email quota exceeded (${MAX_EMAIL_QUOTA} emails per run)`;
-      deliveryResults.push(result);
-      console.log(`   ❌ FAILED: Quota exceeded (${MAX_EMAIL_QUOTA} limit)`);
-      continue;
-    }
-
-    // Step 4: Send Email via Brevo API
-    try {
-      const { subject, htmlContent } = generateODEmail(teacher, sectionStudents);
-      await sendEmail(teacher.email, subject, htmlContent);
-      
-      result.status = "SUCCESS";
-      result.reason = "Email sent successfully";
-      deliveryResults.push(result);
-      emailsSent++;
-      
-      console.log(`   ✅ SUCCESS: Email sent (${emailsSent}/${MAX_EMAIL_QUOTA})`);
-      
-      // Rate limiting
-      await sleep(RATE_LIMIT_MS);
-      
-    } catch (error) {
-      result.status = "FAILED";
-      result.reason = `API Error: ${error.message}`;
-      deliveryResults.push(result);
-      console.log(`   ❌ FAILED: ${error.message}`);
     }
   }
 
-  console.log("\n" + "=".repeat(70) + "\n");
 
-  // ============================================================================
-  // PHASE 3: ADMIN REPORT
-  // ============================================================================
-  console.log("📊 PHASE 3: GENERATING ADMIN REPORT");
-  console.log("-".repeat(70));
+  // --- Analytics Email Logic ---
+  console.log("\n----------------------------------------");
+  console.log("   DO Analytics Email Process");
+  console.log("----------------------------------------");
+  
+  const departmentAnalytics = {};
 
-  const endTime = Date.now();
-  const executionTime = ((endTime - startTime) / 1000).toFixed(2) + "s";
+  // Initialize analytics for all encountered departments
+  for (const dept of allDepartments) {
+    departmentAnalytics[dept] = {};
+  }
 
-  const stats = {
-    totalStudentsToday: todaysStudents.length,
-    activeSections,
-    missingTeachers,
-    executionTime
-  };
+  // Aggregate data by Department -> Section -> Count
+  for (const groupKey of activeSections) {
+    const group = groupedData[groupKey];
+    const dept = group.department;
+    const section = group.section;
+    const count = group.students.length;
 
-  const adminReportHTML = generateAdminReportHTML(diagnostics, deliveryResults, stats);
+    if (!departmentAnalytics[dept]) {
+      departmentAnalytics[dept] = {};
+    }
+    if (!departmentAnalytics[dept][section]) {
+      departmentAnalytics[dept][section] = 0;
+    }
+    departmentAnalytics[dept][section] += count;
+  }
+
+  // Send Analytics Emails
+  let analyticsSentCount = 0;
+  for (const department of Object.keys(departmentAnalytics)) {
+    try {
+      console.log(`\nProcessing Department: ${department}`);
+      const roles = await getDepartmentRoles(department);
+      if (!roles) {
+        console.log(`  > No roles found (Coordinator/HOD). Skipping.`);
+        continue;
+      }
+
+      const analyticsData = departmentAnalytics[department];
+      const { subject, htmlContent } = generateAnalyticsEmail(department, analyticsData);
+
+      const recipients = [...roles.coordinatorEmails];
+      if (roles.hodEmail) {
+        recipients.push(roles.hodEmail);
+      }
+
+      const uniqueRecipients = [...new Set(recipients)]; // Remove duplicates
+      
+      if (uniqueRecipients.length === 0) {
+        console.log(`  > No recipients found.`);
+        continue;
+      }
+
+      console.log(`  > Recipients: ${uniqueRecipients.join(", ")}`);
+
+      for (const email of uniqueRecipients) {
+        if (!validateEmailFormat(email)) {
+          console.log(`  > Invalid email format skipped: ${email}`);
+          deliveryResults.push({
+            section: `${department} (Analytics)`,
+            email: email,
+            status: "FAILED",
+            reason: "Invalid Format"
+          });
+          continue;
+        }
+
+        try {
+          await sendEmail(email, subject, htmlContent);
+          console.log(`  > [SUCCESS] Email sent to ${email}`);
+          analyticsSentCount++;
+          deliveryResults.push({
+            section: `${department} (Analytics)`,
+            email: email,
+            status: "SUCCESS"
+          });
+        } catch (error) {
+           console.error(`  > [FAILED] could not send to ${email}:`, error.message);
+           deliveryResults.push({
+            section: `${department} (Analytics)`,
+            email: email,
+            status: "FAILED",
+            reason: error.message
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error(`  > Error processing ${department}:`, error.message);
+    }
+  }
+
+
+  console.log("\n----------------------------------------");
+  console.log(`Execution Complete.`);
+  console.log(`Advisor Emails Sent: ${emailsSent}`);
+  console.log(`Analytics Emails Sent: ${analyticsSentCount}`);
+  console.log("----------------------------------------");
 
   if (ADMIN_EMAIL) {
     try {
-      const subject = `📊 Email Automation Report - ${today}`;
-      await sendEmail(ADMIN_EMAIL, subject, adminReportHTML);
-      console.log(`✅ Admin report sent to ${ADMIN_EMAIL}`);
+      const reportHTML = generateAdminReportHTML(today, deliveryResults);
+      await sendAdminEmail(ADMIN_EMAIL, `Admin Report - ${today}`, reportHTML);
+      console.log(`\nAdmin report sent to ${ADMIN_EMAIL}`);
     } catch (error) {
-      console.error(`❌ Failed to send admin report: ${error.message}`);
+      console.error("\nFailed to send admin report:", error.message);
     }
-  } else {
-    console.log("⚠️ ADMIN_EMAIL not set - skipping admin report");
   }
-
-  // Final summary
-  console.log("\n" + "=".repeat(70));
-  console.log("📈 EXECUTION SUMMARY");
-  console.log("=".repeat(70));
-  console.log(`✅ Emails Sent: ${emailsSent}`);
-  console.log(`❌ Failures: ${deliveryResults.filter(r => r.status !== "SUCCESS").length}`);
-  console.log(`⏱️  Execution Time: ${executionTime}`);
-  console.log("=".repeat(70) + "\n");
 
   process.exit(0);
 }
 
-// Run the main function
 main().catch(error => {
-  console.error("\n❌ FATAL ERROR:", error.message);
-  console.error(error.stack);
+  console.error("Fatal Error:", error.message);
   process.exit(1);
 });

@@ -1,6 +1,6 @@
 # 📧 Email Automation System
 
-A production-ready email automation system that sends personalized daily emails using Brevo (formerly Sendinblue) and GitHub Actions.
+A production-ready email automation system that sends personalized daily emails using Brevo (formerly Sendinblue), Firebase Firestore, and GitHub Actions.
 
 ## 🚀 Quick Start
 
@@ -10,6 +10,14 @@ A production-ready email automation system that sends personalized daily emails 
 npm install
 ```
 
+### Firebase Setup
+
+**First-time setup:** Follow the [Firebase Setup Guide](FIREBASE_SETUP.md) to:
+1. Create a Firebase project
+2. Enable Firestore
+3. Download service account credentials
+4. Run data migration
+
 ### Configuration
 
 Create a `.env` file based on `.env.example`:
@@ -17,6 +25,7 @@ Create a `.env` file based on `.env.example`:
 ```env
 BREVO_API_KEY=your_xkeysib_...
 SENDER_EMAIL=your_verified_sender@email.com
+FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ```
 
 ### Running Locally
@@ -24,32 +33,68 @@ SENDER_EMAIL=your_verified_sender@email.com
 ```bash
 npm run test:local  # Sends to first 5 subscribers only
 npm run send        # Sends to all subscribers
+npm run migrate     # Migrate CSV data to Firestore (one-time)
 ```
 
 ## 🏗️ Project Structure
 
 ```
 Email-automation/
-├── src/                    # Core logic and services
-├── data/                   # Subscriber CSV and templates
-├── .github/workflows/      # Daily automation schedule
-└── .env.example           # Template for credentials
+├── src/
+│   ├── services/
+│   │   ├── firestoreService.js  # Firebase Firestore operations
+│   │   ├── emailService.js      # Brevo email sending
+│   │   └── ...
+│   ├── templates/               # Email templates
+│   └── index.js                 # Main application logic
+├── scripts/
+│   └── migrateData.js          # CSV to Firestore migration
+├── data/                        # Legacy CSV files (for migration)
+├── .github/workflows/           # Daily automation schedule
+└── .env.example                # Template for credentials
 ```
 
 ## 📊 Data Management
 
-Update files in the `data/` directory:
+Data is now stored in **Firebase Firestore** with two collections:
 
-- **`data/students.csv`**: List of students on OD
-  - Format: `name,emailid,regno,section,event,date`
-- **`data/teachers.csv`**: List of teachers to notify
-  - Format: `section,teacher_name,emailid`
+### Firestore Collections
 
-### Validate Data
-
-```bash
-npm run validate
+**`od_requests`** - Daily OD requests
+```javascript
+{
+  studentId: "24CS0553",
+  toDate: "2026-02-04", // String format
+  reason: "Hackathon",
+  type: "External",
+  status: "pending"
+}
 ```
+
+**`students`** - Student Profiles (ID = Register No)
+```javascript
+{
+  name: "Student Name",
+  collegeEmail: "student@citchennai.net",
+  department: "CSE",
+  section: "A"
+}
+```
+
+**`advisor_mapping`** - Teacher/Advisor Config (ID = DEPT_SECTION e.g., CSE_A)
+```javascript
+{
+  advisorEmails: ["advisor1@cit.net", "advisor2@cit.net"],
+  department: "CSE",
+  section: "A"
+}
+```
+
+### Managing Data
+
+Data is managed through your web application. The email automation system has **read-only** access to Firestore.
+
+**Legacy CSV files** (`data/students.csv`, `data/teachers.csv`) are kept for reference but are no longer used by the system.
 
 ## ⚙️ Configuration
 
@@ -126,4 +171,4 @@ MIT
 
 ---
 
-*Created by [Praveenkumaran-MK](https://github.com/Praveenkumaran-MK)*
+*Created by [Muthukumaran-K-1](https://github.com/Muthukumaran-K-1),[MudharsonPrabhu](https://github.com/MudharsonPrabhu),[Praveenkumaran-MK](https://github.com/Praveenkumaran-MK),[Kesavamurthy](https://github.com/Kesavamurthy)*
